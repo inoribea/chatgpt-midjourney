@@ -88,15 +88,18 @@ watch(()=>pp.value, ()=>{
 </script>
 <template>
 <div class="flex justify-start items-center flex-wrap myblend">
-    <div class="w-[var(--my-blend-img-size)] h-[var(--my-blend-img-size)] mr-2 mt-2 bg-[#ddd] overflow-hidden rounded-sm relative group " v-for="item in base64Array">
-        <NImage :src="item.base64" object-fit="cover"></NImage>
+    <div
+      class="w-[var(--my-blend-img-size)] h-[var(--my-blend-img-size)] mr-2 mt-2 overflow-hidden rounded-sm border border-gray-400/20 relative group flex items-center justify-center bg-transparent"
+      v-for="item in base64Array"
+    >
+        <NImage :src="item.base64" object-fit="cover" class="h-full w-full" />
         <SvgIcon icon="fluent:delete-12-filled" :class="{'hidden':max>1}"
         class="absolute top-0 right-0 text-red-600 text-[20px] cursor-pointer  group-hover:block "
         @click="base64Array.splice(base64Array.indexOf(item),1)"></SvgIcon>
     </div>
     <div   @click="fsRef.click()" v-if="base64Array.length<max" 
-         class="w-[var(--my-blend-img-size)] h-[var(--my-blend-img-size)] mt-2 bg-[#999] overflow-hidden rounded-sm flex justify-center items-center cursor-pointer">
-            <SvgIcon icon="mdi:add-bold" class="text-[40px] text-[#fff]"></SvgIcon>
+         class="w-[var(--my-blend-img-size)] h-[var(--my-blend-img-size)] mt-2 overflow-hidden rounded-sm border border-gray-400/20 flex justify-center items-center cursor-pointer bg-transparent">
+            <SvgIcon icon="mdi:add-bold" class="text-[32px] text-gray-500"></SvgIcon>
     </div>
 </div>
 <input type="file"  @change="selectFile"  ref="fsRef" style="display: none" accept="image/jpeg, image/jpg, image/png, image/gif"/>
@@ -105,6 +108,6 @@ watch(()=>pp.value, ()=>{
 
 <style scoped>
 .myblend{
-    --my-blend-img-size:75px
+    --my-blend-img-size:80px
 }
 </style>

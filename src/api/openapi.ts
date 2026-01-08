@@ -239,6 +239,90 @@ export const gptUploadFile=   (url :string, FormData:FormData)=>{
 
 }
 
+async function handleSeedream(payload: any, chat: Chat.Chat) {
+  try {
+    const res = await seedreamGenerate(payload);
+    const list: any[] = Array.isArray(res?.data) ? res.data : [];
+    const images = list
+      .map(
+        (v) =>
+          v.url ||
+          (v.b64_json ? `data:image/png;base64,${v.b64_json}` : ""),
+      )
+      .filter((v) => v);
+    if (!images.length) throw res;
+
+    const first = list[0] ?? {};
+    chat.model = payload?.model ?? chat.model;
+    chat.text = first.revised_prompt ?? payload?.prompt ?? "图片已完成";
+    chat.opt = {
+      imageUrl: images[0],
+      images,
+      size: first.size,
+    };
+    chat.loading = false;
+    homeStore.setMyData({ act: "updateChat", actData: chat });
+  } catch (e: any) {
+    let err = "";
+    try {
+      err = typeof e === "string" ? e : JSON.stringify(e, null, 2);
+    } catch (error) {
+      err = `${e}`;
+    }
+    chat.text = "失败！" + "\n```json\n" + err + "\n```\n";
+    chat.loading = false;
+    homeStore.setMyData({ act: "updateChat", actData: chat });
+  }
+}
+
+async function handleSeedreamEdit(payload: any, chat: Chat.Chat) {
+  try {
+    if (!payload.editImageFile) {
+      throw new Error("请上传需要编辑的图片");
+    }
+    const editsPayload = {
+      model: payload.model,
+      image: payload.editImageFile,
+      mask: payload.editMaskFile,
+      prompt: payload.prompt,
+      n: payload.n,
+      size: payload.size,
+      response_format: payload.response_format,
+    };
+    const res = await seedreamEdits(editsPayload);
+    const list: any[] = Array.isArray(res?.data) ? res.data : [];
+    const images = list
+      .map(
+        (v) =>
+          v.url ||
+          (v.b64_json ? `data:image/png;base64,${v.b64_json}` : ""),
+      )
+      .filter((v) => v);
+    if (!images.length) throw res;
+
+    const first = list[0] ?? {};
+    chat.model = payload?.model ?? chat.model;
+    chat.text = payload?.prompt ?? "图片编辑已完成";
+    chat.opt = {
+      imageUrl: images[0],
+      images,
+      size: first.size,
+    };
+    chat.loading = false;
+    homeStore.setMyData({ act: "updateChat", actData: chat });
+  } catch (e: any) {
+    let err = "";
+    try {
+      err = typeof e === "string" ? e : JSON.stringify(e, null, 2);
+    } catch (error) {
+      err = `${e}`;
+    }
+    chat.text = "编辑失败！" + "\n```json\n" + err + "\n```\n";
+    chat.loading = false;
+    homeStore.setMyData({ act: "updateChat", actData: chat });
+  }
+}
+
 export const subGPT= async (data:any, chat:Chat.Chat )=>{
    let d:any;
    let action= data.action;
@@ -345,90 +429,6 @@ export const subGPT= async (data:any, chat:Chat.Chat )=>{
 
    }
 
-}
-
-async function handleSeedream(payload: any, chat: Chat.Chat) {
-  try {
-    const res = await seedreamGenerate(payload);
-    const list: any[] = Array.isArray(res?.data) ? res.data : [];
-    const images = list
-      .map(
-        (v) =>
-          v.url ||
-          (v.b64_json ? `data:image/png;base64,${v.b64_json}` : ""),
-      )
-      .filter((v) => v);
-    if (!images.length) throw res;
-
-    const first = list[0] ?? {};
-    chat.model = payload?.model ?? chat.model;
-    chat.text = first.revised_prompt ?? payload?.prompt ?? "图片已完成";
-    chat.opt = {
-      imageUrl: images[0],
-      images,
-      size: first.size,
-    };
-    chat.loading = false;
-    homeStore.setMyData({ act: "updateChat", actData: chat });
-  } catch (e: any) {
-    let err = "";
-    try {
-      err = typeof e === "string" ? e : JSON.stringify(e, null, 2);
-    } catch (error) {
-      err = `${e}`;
-    }
-    chat.text = "失败！" + "\n```json\n" + err + "\n```\n";
-    chat.loading = false;
-    homeStore.setMyData({ act: "updateChat", actData: chat });
-  }
-}
-
-async function handleSeedreamEdit(payload: any, chat: Chat.Chat) {
-  try {
-    if (!payload.editImageFile) {
-      throw new Error("请上传需要编辑的图片");
-    }
-    const editsPayload = {
-      model: payload.model,
-      image: payload.editImageFile,
-      mask: payload.editMaskFile,
-      prompt: payload.prompt,
-      n: payload.n,
-      size: payload.size,
-      response_format: payload.response_format,
-    };
-    const res = await seedreamEdits(editsPayload);
-    const list: any[] = Array.isArray(res?.data) ? res.data : [];
-    const images = list
-      .map(
-        (v) =>
-          v.url ||
-          (v.b64_json ? `data:image/png;base64,${v.b64_json}` : ""),
-      )
-      .filter((v) => v);
-    if (!images.length) throw res;
-
-    const first = list[0] ?? {};
-    chat.model = payload?.model ?? chat.model;
-    chat.text = payload?.prompt ?? "图片编辑已完成";
-    chat.opt = {
-      imageUrl: images[0],
-      images,
-      size: first.size,
-    };
-    chat.loading = false;
-    homeStore.setMyData({ act: "updateChat", actData: chat });
-  } catch (e: any) {
-    let err = "";
-    try {
-      err = typeof e === "string" ? e : JSON.stringify(e, null, 2);
-    } catch (error) {
-      err = `${e}`;
-    }
-    chat.text = "编辑失败！" + "\n```json\n" + err + "\n```\n";
-    chat.loading = false;
-    homeStore.setMyData({ act: "updateChat", actData: chat });
-  }
 }
 
 export const isDallImageModel =(model:string|undefined)=>{
@@ -708,8 +708,8 @@ export const openaiSetting= ( q:any,ms:MessageApiInjection )=>{
         const doubaoUrl = obj.doubao_url ?? obj.doubaoUrl ?? url;
         const doubaoKey = obj.doubao_key ?? obj.doubaoKey ?? key;
         gptServerStore.setMyData(  {
-            OPENAI_API_BASE_URL:url, 
-            MJ_SERVER:url, 
+            OPENAI_API_BASE_URL:url,
+            MJ_SERVER:url,
             SUNO_SERVER:url,
             LUMA_SERVER:url,
             RUNWAY_SERVER:url,
@@ -720,11 +720,11 @@ export const openaiSetting= ( q:any,ms:MessageApiInjection )=>{
             UDIO_SERVER:url,
             PIXVERSE_SERVER:url,
             RIFF_SERVER:url,
-            
-            
-            
+
+
+
             OPENAI_API_KEY:key,
-            MJ_API_SECRET:key, 
+            MJ_API_SECRET:key,
             SUNO_KEY:key,
             LUMA_KEY:key,
             RUNWAY_KEY:key,
@@ -757,7 +757,7 @@ export const openaiSetting= ( q:any,ms:MessageApiInjection )=>{
             }
             applySettings(obj);
         } catch (error) {
-            
+
         }
     }
     else if(q.url || q.key || q.doubao_url || q.doubao_key){

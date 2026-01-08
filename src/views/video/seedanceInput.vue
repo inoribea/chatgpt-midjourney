@@ -5,7 +5,7 @@ import { mytpl } from './tpl';
 import { DtoTpl, PostVideo } from './veo';
 import imageBase64Array from './image-base64-array.vue';
 import { t } from '@/locales';
-import { mlog } from '@/api';
+import { mlog, upImg } from '@/api';
 import { seedanceListModels } from '@/api/seedance';
 
 const st = ref({
@@ -14,6 +14,7 @@ const st = ref({
   isLoading: false
 });
 const fieldValues = ref<any[]>([]);
+const fileInputRefs = ref<Record<string, HTMLInputElement | null>>({});
 const ms = useMessage();
 
 const tplArr = computed<DtoTpl[]>(() => mytpl.tpl.filter((item) => item.plat === 'seedance'));
@@ -140,24 +141,55 @@ const ratioValue = computed({
   },
 });
 
-// 过滤掉 ratio 字段，在循环中不再单独渲染
+const getFieldIndex = (key: string) => {
+  if (!currentTpl.value) return -1;
+  return currentTpl.value.field.findIndex((f) => f.key === key);
+};
+
+const getFieldValue = (key: string) => {
+  const idx = getFieldIndex(key);
+  if (idx === -1) return '';
+  return fieldValues.value[idx];
+};
+
+const setFieldValue = (key: string, val: any) => {
+  const idx = getFieldIndex(key);
+  if (idx !== -1) {
+    fieldValues.value[idx] = val;
+  }
+};
+
 const filteredFields = computed(() => {
   if (!currentTpl.value) return [];
 
   let fields = currentTpl.value.field
     .map((f, idx) => ({ ...f, originalIndex: idx }))
-    .filter((f) => f.key !== 'ratio');
+    .filter((f) => f.key !== 'ratio' && f.type !== 'image_base64_url');
 
   // 根据模式过滤字段
+  if (st.value.mode === 'img2video') {
+    fields = fields.filter((f) => f.key !== 'last_frame');
+  } else if (st.value.mode === 'txt2video') {
+    fields = fields.filter((f) => f.key !== 'first_frame' && f.key !== 'last_frame' && f.key !== 'reference_image');
+  }
+  // img2videoBoth: 显示 first_frame、last_frame、参考图
+
+  return fields;
+});
+
+const imageFields = computed(() => {
+  if (!currentTpl.value) return [];
+
+  let fields = currentTpl.value.field
+    .map((f, idx) => ({ ...f, originalIndex: idx }))
+    .filter((f) => f.type === 'image_base64_url');
+
   if (st.value.mode === 'txt2video') {
-    // 文生视频：仅参考图可选，不显示首尾帧
-    fields = fields.filter((f) => f.key !== 'first_frame' && f.key !== 'last_frame');
-  } else if (st.value.mode === 'img2video') {
-    // 图生视频：参考图 + 首帧
+    return [];
+  }
+  if (st.value.mode === 'img2video') {
     fields = fields.filter((f) => f.key !== 'last_frame');
   }
-  // img2videoBoth: 显示 first_frame 和 last_frame
-
   return fields;
 });
 
@@ -244,6 +276,29 @@ const create = async () => {
   }
   st.value.isLoading = false;
 };
+
+const setFileRef = (key: string, el: HTMLInputElement | null) => {
+  fileInputRefs.value[key] = el;
+};
+
+const triggerUpload = (key: string) => {
+  const el = fileInputRefs.value[key];
+  el?.click();
+};
+
+const onSelectFile = async (key: string, event: Event) => {
+  const inputEl = event.target as HTMLInputElement;
+  const file = inputEl.files?.[0];
+  if (!file) return;
+  try {
+    const base64 = await upImg(file);
+    setFieldValue(key, base64);
+  } catch (error) {
+    ms.error(t('mj.createFail'));
+  } finally {
+    inputEl.value = '';
+  }
+};
 </script>
 
 <template>
@@ -299,14 +354,6 @@ const create = async () => {
           <n-select v-model:value="fieldValues[tp.originalIndex]" :options="tp.options" size="small" />
         </div>
 
-        <div class="pt-1" v-if="tp.type === 'image_base64_url'">
-          <n-divider v-if="tp.key === 'first_frame'" title-placement="left">{{ $t('video.referenceFrame') }}</n-divider>
-          <div class="pb-1 text-[13px] opacity-80" v-if="tp.key === 'reference_image'">{{ $t('video.referenceImage') }}</div>
-          <div class="pb-1 text-[13px] opacity-80" v-else-if="tp.key === 'first_frame'">{{ $t('video.firstFrame') }}</div>
-          <div class="pb-1 text-[13px] opacity-80" v-else-if="tp.key === 'last_frame'">{{ $t('video.lastFrame') }}</div>
-          <image-base64-array v-model:value="fieldValues[tp.originalIndex]" :is-one="true" upload="1" />
-        </div>
-
         <div class="pt-1" v-if="tp.type === 'image_base64_file'">
           <image-base64-array v-model:value="fieldValues[tp.originalIndex]" :is-file="true" :is-one="true" upload="1" />
         </div>
@@ -326,6 +373,31 @@ const create = async () => {
           <n-input-number v-model:value="fieldValues[tp.originalIndex]" size="small" :min="tp.min" :max="tp.max" />
         </div>
       </template>
+
+      <div class="pt-2" v-if="imageFields.length">
+        <div class="flex items-start space-x-3">
+          <template v-for="img in imageFields" :key="img.key">
+            <div class="flex flex-col items-start">
+              <input
+                type="file"
+                class="hidden"
+                accept="image/jpeg, image/jpg, image/png, image/gif"
+                :ref="(el) => setFileRef(img.key, el as HTMLInputElement | null)"
+                @change="(e) => onSelectFile(img.key, e)"
+              />
+              <div
+                class="h-[80px] w-[80px] overflow-hidden rounded-sm border border-gray-400/20 flex justify-center items-center cursor-pointer"
+                @click="triggerUpload(img.key)"
+              >
+                <img v-if="getFieldValue(img.key)" :src="getFieldValue(img.key)" class="h-full w-full object-cover" />
+                <div class="text-center text-xs" v-else-if="img.key === 'reference_image'">{{ $t('video.referenceImage') }}</div>
+                <div class="text-center text-xs" v-else-if="img.key === 'first_frame'">{{ $t('video.firstFrame') }}</div>
+                <div class="text-center text-xs" v-else-if="img.key === 'last_frame'">{{ $t('video.lastFrame') }}</div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
 
       <div class="mt-3 flex justify-end items-center">
         <div class="flex">

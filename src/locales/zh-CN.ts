@@ -247,6 +247,8 @@ export default {
     ,totalUsage:'订阅总额'
     ,disableGpt4:'已禁用GPT4'
     ,setTextInfo:'OpenAi Api Key 错误，点击这里重新'
+    ,basicSetting:'基础设置'
+    ,imageSetting:'画面设置'
 
     ,attr1:'附'
     ,ulink:'原图链接'

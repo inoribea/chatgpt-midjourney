@@ -148,6 +148,8 @@ export default {
   "totalUsage": "Total subscription amount",
   "disableGpt4": "GPT4 disabled",
   "setTextInfo": "OpenAI API Key error, click here to retry",
+  "basicSetting": "Basic Settings",
+  "imageSetting": "Image Settings",
 
   "attr1": "Attr",
   "ulink": "Image Link",

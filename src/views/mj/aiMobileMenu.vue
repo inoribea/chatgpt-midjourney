@@ -61,6 +61,10 @@ const urouter = useRouter() //
         <div class="text-[13px]">{{ $t('suno.menu') }}</div>
       </div>
 
+      <div v-if="!isDisableMenu ( 'canvas')"    class="flex items-center justify-center flex-col "   @click="  urouter.push('/canvas')"  :class="[ goHome =='canvas' ? 'active' : '']" >
+        <SvgIcon icon="ri:artboard-line" class="text-3xl"></SvgIcon>
+        <div class="text-[13px]">画布</div>
+      </div>
 
       <!-- <div  v-if="!isDisableMenu ( 'gallery')"  class="flex items-center justify-center flex-col " @click="homeStore.setMyData({act:'gallery'})" >
         <SvgIcon icon="material-symbols:imagesmode-outline" class="text-3xl"></SvgIcon>

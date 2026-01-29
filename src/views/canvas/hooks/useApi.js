@@ -7,7 +7,7 @@ import { ref, reactive, onUnmounted } from 'vue'
 import { generateImage } from '../api/image'
 import { createVideoTask, getVideoTaskStatus } from '../api/video'
 import { streamChatCompletions } from '../api/chat'
-import { getModelByName } from '@/config/models'
+import { getModelByName } from '../config/models'
 import { useApiConfig } from './useApiConfig'
 
 /**

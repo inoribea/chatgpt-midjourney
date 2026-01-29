@@ -20,7 +20,7 @@ import {
   DEFAULT_IMAGE_SIZE,
   DEFAULT_VIDEO_RATIO,
   DEFAULT_VIDEO_DURATION
-} from '@/config/models'
+} from '../config/models'
 
 // Loading state (always false for built-in models) | 加载状态
 const loading = ref(false)

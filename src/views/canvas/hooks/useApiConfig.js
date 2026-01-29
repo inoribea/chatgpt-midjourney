@@ -3,8 +3,8 @@
  */
 
 import { ref, computed, watch } from 'vue'
-import { setBaseUrl as setRequestBaseUrl } from '@/utils'
-import { DEFAULT_API_BASE_URL, STORAGE_KEYS } from '@/utils'
+import { setBaseUrl as setRequestBaseUrl } from '../utils'
+import { DEFAULT_API_BASE_URL, STORAGE_KEYS } from '../utils'
 
 /**
  * Get stored value from localStorage | 从 localStorage 获取存储值

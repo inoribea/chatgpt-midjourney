@@ -151,7 +151,7 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/canvas',
-    name: 'canvas',
+    name: 'RootCanvas',
     component: canvasLayout,
     redirect: '/canvas/index',
     children: [
